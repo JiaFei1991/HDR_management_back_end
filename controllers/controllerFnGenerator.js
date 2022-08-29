@@ -1,0 +1,132 @@
+const catchAsync = require('../util/catchAsync');
+const ErrorGenerator = require('../util/errorGenerator');
+
+const returnObjConstruction = (dataObj) => {
+  const returnObj = {
+    status: 'success',
+    data: dataObj
+  };
+
+  return returnObj;
+};
+
+const populateOptions = (Model) => {
+  let option;
+  switch (Model.modelName) {
+    case 'Session':
+      option = 'tickets';
+      break;
+    case 'User':
+      // NOTE: user model also need to populate schedule
+      option = 'sessions';
+      break;
+    default:
+      option = '';
+      break;
+  }
+  return option;
+};
+
+exports.getAll = (Model) =>
+  catchAsync(async (req, res, next) => {
+    let filter = {};
+    if (req.params.userId) filter = { studentID: req.params.userId };
+
+    const populateFilter = populateOptions(Model);
+
+    const allEntries = await Model.find(filter).populate(populateFilter);
+
+    const dataObj = {};
+    // dataObj[allEntries[0].modelName] = allEntries;
+    dataObj[Model.collection.name] = allEntries;
+    res.status(200).json(returnObjConstruction(dataObj));
+  });
+
+exports.getOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const populateFilter = populateOptions(Model);
+    const newEntry = await Model.findById(req.params.id).populate(
+      populateFilter
+    );
+
+    if (!newEntry) {
+      return next(
+        new ErrorGenerator(`no entry found under id: ${req.params.id}`, 404)
+      );
+    }
+
+    const dataObj = {};
+    dataObj[Model.collection.name] = newEntry;
+    res.status(200).json(returnObjConstruction(dataObj));
+  });
+
+exports.updateOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const updatedEntry = await Model.findOneAndUpdate(req.params.id, req.body, {
+      new: true
+    });
+
+    if (!updatedEntry) {
+      return next(
+        new ErrorGenerator(
+          `Could not find entry with the id: ${req.params.id}`,
+          404
+        )
+      );
+    }
+
+    const dataObj = {};
+    dataObj[Model.collection.name] = updatedEntry;
+    res.status(200).json(returnObjConstruction(dataObj));
+  });
+
+exports.deleteOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    let deletedEntry;
+    // set softDelete to true and accountStatus to false in order to soft delete an account
+    if (req.body.softDelete) {
+      deletedEntry = await Model.findOneAndUpdate(req.params.id, req.body, {
+        new: true
+      });
+    } else {
+      deletedEntry = await Model.findByIdAndDelete(req.params.id);
+    }
+
+    if (!deletedEntry) {
+      return next(
+        new ErrorGenerator(
+          `Could not find student with the id: ${req.params.id}`,
+          404
+        )
+      );
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: null
+    });
+  });
+
+exports.deleteAll = (Model) => async (req, res, next) => {
+  await Model.deleteMany();
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      data: null
+    }
+  });
+};
+
+exports.createOne = (Model) =>
+  catchAsync(async (req, res, next) => {
+    const newEntry = await Model.create(req.body);
+
+    const dataObj = {};
+    dataObj[Model.collection.name] = newEntry;
+
+    res.status(200).json({
+      status: 'success',
+      data: dataObj
+    });
+  });
