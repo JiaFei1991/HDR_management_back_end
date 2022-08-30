@@ -1,9 +1,10 @@
 const express = require('express');
-const sessionControllers = require('../controllers/sessionControllers');
+const scheduleControllers = require('../controllers/scheduleControllers');
 const authControllers = require('../controllers/authControllers');
 
 const router = express.Router({ mergeParams: true });
 
+// user have to log in to access the following routes
 router.use(authControllers.routeProtection);
 
 // if nested route is used, a single student is getting all tickets that belongs to him
@@ -14,21 +15,21 @@ router
   .get(
     authControllers.checkNestedRoute,
     authControllers.restrictTo('admin', 'supervisor'),
-    sessionControllers.getAllSessions
+    scheduleControllers.getAllSchedules
   )
-  .post(sessionControllers.createSession)
+  .post(scheduleControllers.createSchedule)
   .delete(
     authControllers.restrictTo('admin', 'supervisor'),
-    sessionControllers.deleteAllSession
+    scheduleControllers.deleteAllSchedule
   );
 
 // a student cannot access sessions or tickets that is not his/hers
-router.use(sessionControllers.interAccessProtection);
+router.use(scheduleControllers.interAccessProtection);
 
 router
   .route('/:id')
-  .get(sessionControllers.getOneSession)
-  .patch(sessionControllers.updateSession)
-  .delete(sessionControllers.deleteOneSession);
+  .get(scheduleControllers.getOneSchedule)
+  .patch(scheduleControllers.updateSchedule)
+  .delete(scheduleControllers.deleteOneSchedule);
 
 module.exports = router;

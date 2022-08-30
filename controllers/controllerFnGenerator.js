@@ -20,6 +20,9 @@ const populateOptions = (Model) => {
       // NOTE: user model also need to populate schedule
       option = 'sessions';
       break;
+    case 'Project':
+      option = 'schedules';
+      break;
     default:
       option = '';
       break;
