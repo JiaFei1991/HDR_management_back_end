@@ -150,16 +150,5 @@ userSchema.pre(/^find/, function (next) {
   next();
 });
 
-userSchema.post(/^find/, function (doc) {
-  // console.log(doc);
-  if (doc.role === 'student') {
-    doc.students = undefined;
-  } else if (doc.role === 'supervisor') {
-    doc.supervisors = undefined;
-    doc.projects = undefined;
-    doc.schedules = undefined;
-  }
-});
-
 const User = mongoose.model('User', userSchema);
 module.exports = User;
