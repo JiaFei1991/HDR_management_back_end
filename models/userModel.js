@@ -63,23 +63,19 @@ const userSchema = new mongoose.Schema(
     supervisors: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        default: undefined
       }
     ],
     // ----------- for supervisor only -----------
     students: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        default: undefined
       }
     ],
     // ----------- for both -----------
-    projects: [
-      {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Project'
-      }
-    ],
     accountStatus: {
       type: Boolean,
       default: true,
@@ -96,16 +92,19 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// virtual populate for parent referencing
-userSchema.virtual('sessions', {
-  ref: 'Session',
-  foreignField: 'sessionID',
+// VIRTUAL POPULATE for parent referencing
+// project field is only available to students
+// supervisors query a student first before seeing projects associated with him/her
+userSchema.virtual('projects', {
+  ref: 'Project',
+  foreignField: 'studentID',
   localField: '_id'
 });
 
+// schedules are queried via students
 userSchema.virtual('schedules', {
   ref: 'Schedule',
-  foreignField: 'scheduleID',
+  foreignField: 'studentID',
   localField: '_id'
 });
 
@@ -149,6 +148,17 @@ userSchema.pre('save', function (next) {
 userSchema.pre(/^find/, function (next) {
   this.find({ accountStatus: { $ne: false } }).select('-__v');
   next();
+});
+
+userSchema.post(/^find/, function (doc) {
+  // console.log(doc);
+  if (doc.role === 'student') {
+    doc.students = undefined;
+  } else if (doc.role === 'supervisor') {
+    doc.supervisors = undefined;
+    doc.projects = undefined;
+    doc.schedules = undefined;
+  }
 });
 
 const User = mongoose.model('User', userSchema);

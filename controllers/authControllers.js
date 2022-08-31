@@ -137,7 +137,7 @@ exports.restrictTo =
   };
 
 exports.interStudentProtection = (req, res, next) => {
-  if (req.user.role === 'student' && req.user._id !== req.params.id) {
+  if (req.user.role === 'student' && req.user.id !== req.params.id) {
     return next(
       new ErrorGenerator('You cannot access other students profile.', 403)
     );

@@ -21,8 +21,13 @@ const scheduleSchema = mongoose.Schema(
     },
     projectID: {
       type: mongoose.Schema.ObjectId,
-      ref: 'User',
+      ref: 'Project',
       require: [true, 'A schedule must blongs to a project.']
+    },
+    studentID: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+      require: [true, 'A schedule must blongs to a student.']
     },
     // a non-required field, when provided, user will receive an email
     // alarting them about the schedule before x mins of its start

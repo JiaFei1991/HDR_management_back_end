@@ -23,11 +23,11 @@ const projectSchema = mongoose.Schema(
       ref: 'User',
       require: [true, 'A schedule must blongs to a student.']
     },
-    supervisorID: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      require: [true, 'A schedule must blongs to a supervisor.']
-    },
+    // supervisorID: {
+    //   type: mongoose.Schema.ObjectId,
+    //   ref: 'User',
+    //   require: [true, 'A schedule must blongs to a supervisor.']
+    // },
     createdAt: {
       type: Date,
       default: Date.now()
@@ -45,38 +45,33 @@ projectSchema.virtual('schedules', {
   foreignField: 'projectID',
   localField: '_id'
 });
+
+projectSchema.virtual('sessions', {
+  ref: 'Session',
+  foreignField: 'projectID',
+  localField: '_id'
+});
+
 // virtual field that calculates the length of project from creation
 projectSchema.virtual('project length').get(function () {
   const lapsedTimeSec = (Date.now() - this.createdAt) / 1000;
-  const returnTime = {};
 
-  // in the range between 1 min to an hour
-  if (lapsedTimeSec > 60 && lapsedTimeSec <= 3600) {
-    returnTime.val = lapsedTimeSec / 60;
-    returnTime.unit = 'minutes';
+  const returnTime = {};
+  const timeInSec = [60, 3600, 86400, 2592000, 31104000];
+  const timeUnit = ['minutes', 'hours', 'days', 'months'];
+  // check for middle cases
+  for (let i = 0; i < timeInSec.length - 1; i++) {
+    if (lapsedTimeSec > timeInSec[i] && lapsedTimeSec <= timeInSec[i + 1]) {
+      returnTime.val = lapsedTimeSec / timeInSec[i];
+      returnTime.unit = timeUnit[i];
+      return returnTime;
+    }
   }
-  // in the range between 1 hour to a day
-  else if (lapsedTimeSec > 3600 && lapsedTimeSec <= 86400) {
-    returnTime.val = lapsedTimeSec / (60 * 60);
-    returnTime.unit = 'hours';
-  }
-  // in the range between 1 day to a month
-  else if (lapsedTimeSec > 86400 && lapsedTimeSec <= 2592000) {
-    returnTime.val = lapsedTimeSec / (60 * 60 * 24);
-    returnTime.unit = 'days';
-  }
-  // in the range between 1 month to a year
-  else if (lapsedTimeSec > 2592000 && lapsedTimeSec <= 31104000) {
-    returnTime.val = lapsedTimeSec / (60 * 60 * 24 * 30);
-    returnTime.unit = 'months';
-  }
-  // in the range between a year
-  else if (lapsedTimeSec > 31104000) {
-    returnTime.val = lapsedTimeSec / (60 * 60 * 24 * 30 * 12);
+  // check for begin and end case
+  if (lapsedTimeSec > 31104000) {
+    returnTime.val = lapsedTimeSec / 31104000;
     returnTime.unit = 'years';
-  }
-  // default return time in seconds
-  else {
+  } else {
     returnTime.val = lapsedTimeSec;
     returnTime.unit = 'seconds';
   }

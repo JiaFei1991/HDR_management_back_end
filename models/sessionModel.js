@@ -10,15 +10,10 @@ const sessionSchema = mongoose.Schema(
       type: Date,
       default: Date.now()
     },
-    studentID: {
+    projectID: {
       type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      require: [true, 'A session must blongs to a student.']
-    },
-    supervisorID: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'User',
-      require: [true, 'A session must blongs to a supervisor.']
+      ref: 'Project',
+      require: [true, 'A session must blongs to a project.']
     }
   },
   {

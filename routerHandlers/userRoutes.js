@@ -2,6 +2,7 @@ const express = require('express');
 const userControllers = require('../controllers/userControllers');
 const authControllers = require('../controllers/authControllers');
 const sessionRouter = require('./sessionRoutes');
+const projectRouter = require('./projectRoutes');
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.route('/login').post(authControllers.login);
 // when a user id is present in a route followed by the 'session' keyword
 // use the sessionRouter, passing the user id using nested routes
 router.use('/:userId/sessions', sessionRouter);
+router.use('/:userId/projects', projectRouter);
 
 // access to all following routes require login
 router.use(authControllers.routeProtection);

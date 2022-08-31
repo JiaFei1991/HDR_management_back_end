@@ -10,18 +10,22 @@ const returnObjConstruction = (dataObj) => {
   return returnObj;
 };
 
-const populateOptions = (Model) => {
+const populateOptions = (Model, req) => {
   let option;
   switch (Model.modelName) {
     case 'Session':
-      option = 'tickets';
+      option = [{ path: 'tickets' }];
       break;
     case 'User':
-      // NOTE: user model also need to populate schedule
-      option = 'sessions';
+      option = [
+        { path: 'supervisors' },
+        { path: 'students' },
+        { path: 'projects' },
+        { path: 'schedules' }
+      ];
       break;
     case 'Project':
-      option = 'schedules';
+      option = [{ path: 'schedules' }, { path: 'sessions' }];
       break;
     default:
       option = '';
@@ -35,19 +39,17 @@ exports.getAll = (Model) =>
     let filter = {};
     if (req.params.userId) filter = { studentID: req.params.userId };
 
-    const populateFilter = populateOptions(Model);
-
+    const populateFilter = populateOptions(Model, req);
     const allEntries = await Model.find(filter).populate(populateFilter);
 
     const dataObj = {};
-    // dataObj[allEntries[0].modelName] = allEntries;
     dataObj[Model.collection.name] = allEntries;
     res.status(200).json(returnObjConstruction(dataObj));
   });
 
 exports.getOne = (Model) =>
   catchAsync(async (req, res, next) => {
-    const populateFilter = populateOptions(Model);
+    const populateFilter = populateOptions(Model, req);
     const newEntry = await Model.findById(req.params.id).populate(
       populateFilter
     );
@@ -65,9 +67,13 @@ exports.getOne = (Model) =>
 
 exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
-    const updatedEntry = await Model.findOneAndUpdate(req.params.id, req.body, {
-      new: true
-    });
+    const updatedEntry = await Model.findOneAndUpdate(
+      { _id: req.params.id },
+      req.body,
+      {
+        new: true
+      }
+    );
 
     if (!updatedEntry) {
       return next(
