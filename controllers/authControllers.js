@@ -158,3 +158,20 @@ exports.interAccessProtection = (Model) =>
     }
     next();
   });
+
+exports.roleBasedQueryFilling = (req, res, next) => {
+  if (req.user.role === 'supervisor') {
+    req.query = { ...req.query, role: 'student' };
+  }
+  next();
+};
+
+exports.nestedRouteParamFilling = (req, res, next) => {
+  if (req.params.userId)
+    req.query = { ...req.query, studentID: req.params.userId };
+  if (req.params.projectId)
+    req.query = { ...req.query, projectID: req.params.projectId };
+  if (req.params.sessionId)
+    req.query = { ...req.query, sessionID: req.params.sessionId };
+  next();
+};

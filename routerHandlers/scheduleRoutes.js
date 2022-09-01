@@ -15,6 +15,7 @@ router
   .get(
     authControllers.checkNestedRoute,
     authControllers.restrictTo('admin', 'supervisor'),
+    authControllers.nestedRouteParamFilling,
     scheduleControllers.getAllSchedules
   )
   .post(scheduleControllers.createSchedule)
