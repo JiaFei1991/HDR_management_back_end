@@ -36,3 +36,5 @@ router
   );
 
 module.exports = router;
+
+// TODO: check upload and update (patch) fields, do not allow unauthorised field altering
