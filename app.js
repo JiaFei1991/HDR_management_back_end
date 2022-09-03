@@ -20,9 +20,9 @@ if (process.env.ENVIRONMENT === 'development') {
 app.use(express.json());
 app.use(
   bodyParser.urlencoded({
-    limit: '5000mb',
+    limit: '50mb',
     extended: true,
-    parameterLimit: 100000000000
+    parameterLimit: 1000
   })
 );
 

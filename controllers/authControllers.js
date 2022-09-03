@@ -4,6 +4,7 @@ const utility = require('util');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const path = require('path');
+const fs = require('fs');
 
 const User = require('../models/userModel');
 const ErrorGenerator = require('../util/errorGenerator');
@@ -110,10 +111,8 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     debug: true,
     secureConnection: false,
     auth: {
-      // user: 'feijiajidangao@gmail.com',
-      // pass: 'cfvlxzfleusthskc'
-      user: 'jia_fei1991@hotmail.com',
-      pass: 'FEIJIA86414993,'
+      user: process.env.EMAIL_ADDRESS,
+      pass: process.env.EMAIL_PASS
     },
     tls: {
       rejectUnAuthorized: true
@@ -145,13 +144,59 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  console.log(req.body);
+  // console.log(req.body);
+  // console.log(req.params.resetToken);
+  let templateFile = fs.readFileSync(
+    './staticFiles/resetPasswordTemplate.html',
+    'utf-8'
+  );
 
-  console.log(req.params.resetToken);
+  // 1) hash the reset token and find the user
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.resetToken)
+    .digest('hex');
 
-  res
-    .status(200)
-    .sendFile(path.join(__dirname, '../staticFiles', 'resetPassword.html'));
+  const user = await User.findOne({ passwordResetToken: hashedToken });
+  if (!user) {
+    templateFile = templateFile.replace(
+      'PLACEHOLDER',
+      'No user possess this reset token.'
+    );
+    res.status(404).send(templateFile);
+    return;
+    // return next(new ErrorGenerator('No user possess this reset token.'), 404);
+  }
+  // 2) check if the token has expired
+  if (Date.now() > user.passwordResetExpires) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    templateFile = templateFile.replace(
+      'PLACEHOLDER',
+      'The reset token has expired, please try again.'
+    );
+    res.status(401).send(templateFile);
+    return;
+    // return next(
+    //   new ErrorGenerator('The reset token has expired, please try again.'),
+    //   401
+    // );
+  }
+
+  // 3) set new password and save document, the document middleware will encrypt the new password automatically
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  templateFile = templateFile.replace(
+    'PLACEHOLDER',
+    'You have successfully changed the password, login again!'
+  );
+  res.status(200).send(templateFile);
 });
 
 exports.routeProtection = catchAsync(async (req, res, next) => {
