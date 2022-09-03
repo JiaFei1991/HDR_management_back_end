@@ -37,7 +37,7 @@ const populateOptions = (Model) => {
 
 const filterObj = (body, ...fields) => {
   const bodyCopy = { ...body };
-  fields.forEach(function (item, index) {
+  fields.forEach((item, index) => {
     if (bodyCopy[item]) {
       delete bodyCopy[item];
     }

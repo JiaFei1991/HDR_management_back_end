@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const bodyParser = require('body-parser');
 
 const globalErrorHandler = require('./controllers/globalErrorHandler');
 
@@ -17,6 +18,13 @@ if (process.env.ENVIRONMENT === 'development') {
 
 // body parser
 app.use(express.json());
+app.use(
+  bodyParser.urlencoded({
+    limit: '5000mb',
+    extended: true,
+    parameterLimit: 100000000000
+  })
+);
 
 app.use('/HDRapi/v1/users', userRouter);
 app.use('/HDRapi/v1/projects', projectRouter);

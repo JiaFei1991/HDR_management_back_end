@@ -60,7 +60,7 @@ projectSchema.virtual('project length').get(function () {
   const timeInSec = [60, 3600, 86400, 2592000, 31104000];
   const timeUnit = ['minutes', 'hours', 'days', 'months'];
   // check for middle cases
-  for (let i = 0; i < timeInSec.length - 1; i++) {
+  for (let i = 0; i < timeInSec.length - 1; i += 1) {
     if (lapsedTimeSec > timeInSec[i] && lapsedTimeSec <= timeInSec[i + 1]) {
       returnTime.val = lapsedTimeSec / timeInSec[i];
       returnTime.unit = timeUnit[i];

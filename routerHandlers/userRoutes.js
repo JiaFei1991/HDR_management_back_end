@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.route('/signup').post(userControllers.createUser);
 router.route('/login').post(authControllers.login);
+router.route('/forgetPassword').post(authControllers.forgetPassword);
+router.route('/:resetToken/resetPassword').post(authControllers.resetPassword);
 
 // when a user id is present in a route followed by the 'session' keyword
 // use the sessionRouter, passing the user id using nested routes
@@ -36,5 +38,3 @@ router
   );
 
 module.exports = router;
-
-// TODO: check upload and update (patch) fields, do not allow unauthorised field altering

@@ -1,6 +1,9 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const utility = require('util');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const path = require('path');
 
 const User = require('../models/userModel');
 const ErrorGenerator = require('../util/errorGenerator');
@@ -53,6 +56,102 @@ exports.login = catchAsync(async (req, res, next) => {
     status: 'success',
     user: user
   });
+});
+
+exports.forgetPassword = catchAsync(async (req, res, next) => {
+  // 1) find the user using the supplied email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new ErrorGenerator('No user under the supplied email', 404));
+  }
+  // 2) create the password reset token
+  const resetToken = crypto.randomBytes(30).toString('hex');
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  const expireTime = Date.now() + 10 * 60 * 1000; // expires in 10 mins
+  // 3) update the user's document with the plain reset token and expiration time
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpires = expireTime;
+  await user.save({ validateBeforeSave: false });
+  // 4) create reset URL and embed it in html for reply.
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/HDRapi/v1/users/${resetToken}/resetPassword`;
+
+  const replyHtml =
+    '<div>' +
+    '<h2>Password Reset</h2>' +
+    `<form action="${resetURL}" method="POST">` +
+    '<label for="password">New password:</label><br>' +
+    '<input name="password" type="password" id="password"><br>' +
+    '<label for="passwordConfirm">Confirm password:</label><br>' +
+    '<input name="passwordConfirm" type="password" id="passwordConfirm"><br><br>' +
+    '<input type="submit" value="Submit">' +
+    '</form>' +
+    '<p>Enter a new password and password confirm to reset your password.</p>' +
+    '</div>';
+
+  const message = {
+    from: 'jia_fei1991@hotmail.com',
+    to: 'feijiajidangao@gmail.com',
+    subject: 'Password reset (valid for 10 mins)',
+    text: `This is the reset URL:${resetURL}`,
+    html: replyHtml
+  };
+  // 5) send the email
+  // create reusable transporter object using the default SMTP transport
+  const transporter = nodemailer.createTransport({
+    host: 'smtp-mail.outlook.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    logger: true,
+    debug: true,
+    secureConnection: false,
+    auth: {
+      // user: 'feijiajidangao@gmail.com',
+      // pass: 'cfvlxzfleusthskc'
+      user: 'jia_fei1991@hotmail.com',
+      pass: 'FEIJIA86414993,'
+    },
+    tls: {
+      rejectUnAuthorized: true
+    }
+  });
+
+  try {
+    const info = await transporter.sendMail(message);
+    console.log('Message sent: %s', info.messageId);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!'
+    });
+    // in case of failure, erase both field and send error to user
+  } catch (err) {
+    console.log(err);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new ErrorGenerator(
+        'There was an error sending the email. Try again later!'
+      ),
+      500
+    );
+  }
+});
+
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  console.log(req.body);
+
+  console.log(req.params.resetToken);
+
+  res
+    .status(200)
+    .sendFile(path.join(__dirname, '../staticFiles', 'resetPassword.html'));
 });
 
 exports.routeProtection = catchAsync(async (req, res, next) => {
@@ -150,6 +249,11 @@ exports.interAccessProtection = (Model) =>
     if (req.user.role === 'student') {
       // need to first retrive the user using the session/ticket id in query param
       const item = await Model.findById(req.params.id);
+      if (!item) {
+        return next(
+          new ErrorGenerator('No item matches the id in query.', 400)
+        );
+      }
       if (req.user._id !== item.studentID) {
         return next(
           new ErrorGenerator('You cannot access other students ticket.', 403)

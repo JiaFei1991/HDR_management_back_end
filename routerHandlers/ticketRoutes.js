@@ -14,7 +14,6 @@ router
     authControllers.nestedRouteParamFilling,
     ticketControllers.getAllTickets
   )
-  // TODO: investigate nested route for creating ticket
   .post(ticketControllers.createTicket)
   .delete(
     authControllers.restrictTo('admin', 'supervisor'),
