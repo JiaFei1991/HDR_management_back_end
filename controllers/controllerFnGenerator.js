@@ -11,7 +11,7 @@ const returnObjConstruction = (dataObj) => {
   return returnObj;
 };
 
-const populateOptions = (Model, req) => {
+const populateOptions = (Model) => {
   let option;
   switch (Model.modelName) {
     case 'Session':
@@ -35,12 +35,54 @@ const populateOptions = (Model, req) => {
   return option;
 };
 
+const filterObj = (body, ...fields) => {
+  const bodyCopy = { ...body };
+  fields.forEach(function (item, index) {
+    if (bodyCopy[item]) {
+      delete bodyCopy[item];
+    }
+  });
+  return bodyCopy;
+};
+
+const patchFieldCheck = (Model, req) => {
+  let patchBody;
+  switch (Model.modelName) {
+    case 'Project':
+      patchBody = filterObj(req.body, 'studentID', 'createdAt');
+      break;
+    case 'User':
+      patchBody = filterObj(
+        req.body,
+        'email',
+        'password',
+        'passwordConfirm',
+        'role',
+        'accountStatus',
+        'passwordChangedAt',
+        'passwordResetToken',
+        'passwordResetExpires',
+        'slug'
+      );
+      break;
+    case 'Schedule':
+      patchBody = filterObj(req.body, 'studentID', 'projectID', 'createdAt');
+      break;
+    case 'Session':
+      patchBody = filterObj(req.body, 'projectID', 'createdAt');
+      break;
+    case 'Ticket':
+      patchBody = filterObj(req.body, 'studentID', 'sessionID', 'createdAt');
+      break;
+    default:
+      patchBody = req.body;
+      break;
+  }
+  return patchBody;
+};
+
 exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
-    // let filterObj = {};
-    // if (req.params.userId) filterObj = { studentID: req.params.userId };
-    // if (req.params.projectId) filterObj = { projectID: req.params.projectId };
-
     const queryFeatures = new APIFeatures(Model.find(), req.query)
       .filter()
       .sort()
@@ -55,8 +97,8 @@ exports.getAll = (Model) =>
 
 exports.getOne = (Model) =>
   catchAsync(async (req, res, next) => {
-    const populateFilter = populateOptions(Model, req);
-    const newEntry = await Model.findById(req.params.id).populate(
+    const populateFilter = populateOptions(Model);
+    const newEntry = await Model.findById({ _id: req.params.id }).populate(
       populateFilter
     );
 
@@ -73,9 +115,10 @@ exports.getOne = (Model) =>
 
 exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
+    const patchBody = patchFieldCheck(Model, req);
     const updatedEntry = await Model.findOneAndUpdate(
       { _id: req.params.id },
-      req.body,
+      patchBody,
       {
         new: true
       }
@@ -100,9 +143,13 @@ exports.deleteOne = (Model) =>
     let deletedEntry;
     // set softDelete to true and accountStatus to false in order to soft delete an account
     if (req.body.softDelete) {
-      deletedEntry = await Model.findOneAndUpdate(req.params.id, req.body, {
-        new: true
-      });
+      deletedEntry = await Model.findOneAndUpdate(
+        { _id: req.params.id },
+        req.body,
+        {
+          new: true
+        }
+      );
     } else {
       deletedEntry = await Model.findByIdAndDelete(req.params.id);
     }
