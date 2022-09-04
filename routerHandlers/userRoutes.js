@@ -9,6 +9,12 @@ const router = express.Router();
 router.route('/signup').post(userControllers.createUser);
 router.route('/login').post(authControllers.login);
 router.route('/forgetPassword').post(authControllers.forgetPassword);
+router
+  .route('/updatePassword')
+  .post(authControllers.routeProtection, authControllers.updatePassword);
+router
+  .route('/logout')
+  .post(authControllers.routeProtection, authControllers.logout);
 router.route('/:resetToken/resetPassword').post(authControllers.resetPassword);
 
 // when a user id is present in a route followed by the 'session' keyword

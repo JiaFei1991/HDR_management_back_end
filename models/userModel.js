@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     passwordConfirm: {
       type: String,
       required: [true, 'must confirm password'],
+      // TODO: need to handle validation error and send it back to user
       validate: {
         // only going to run on create and save
         validator: function (inputPassword) {

@@ -33,6 +33,23 @@ const jwtTokenCreation = (res, user, justJwt) => {
   }
 };
 
+const eraseToken = (res) => {
+  res.cookie('jwt', undefined);
+  res.cookie('jwtRefresh', undefined);
+};
+
+exports.logout = catchAsync(async (req, res, next) => {
+  if (!req.user) {
+    return next(new ErrorGenerator('User is not logged in.', 401));
+  }
+
+  eraseToken(res);
+  res.status(200).json({
+    status: 'success',
+    message: 'User has been logged out.'
+  });
+});
+
 exports.login = catchAsync(async (req, res, next) => {
   // 1)check if both email and password are provided in the request
   if (!req.body.email || !req.body.password) {
@@ -107,8 +124,8 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     host: 'smtp-mail.outlook.com',
     port: 587,
     secure: false, // true for 465, false for other ports
-    logger: true,
-    debug: true,
+    // logger: true,
+    // debug: true,
     secureConnection: false,
     auth: {
       user: process.env.EMAIL_ADDRESS,
@@ -179,12 +196,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     );
     res.status(401).send(templateFile);
     return;
-    // return next(
-    //   new ErrorGenerator('The reset token has expired, please try again.'),
-    //   401
-    // );
   }
-
   // 3) set new password and save document, the document middleware will encrypt the new password automatically
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
@@ -199,6 +211,40 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   res.status(200).send(templateFile);
 });
 
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) check the required fields
+  if (
+    !req.body.originalPassword ||
+    !req.body.password ||
+    !req.body.passwordConfirm
+  ) {
+    return new ErrorGenerator(
+      'must provide both original password, the new password, and the new password confirm.',
+      400
+    );
+  }
+  // 2) check if the user exist
+  const user = await User.findOne({ _id: req.user._id }).select('+password');
+  if (!user) {
+    return next(new ErrorGenerator('the user does not exists', 404));
+  }
+  // 3) check if the password match
+  if (!(await bcrypt.compare(req.body.originalPassword, user.password))) {
+    return next(new ErrorGenerator('the original password is incorrect', 400));
+  }
+  // 4) update the password if all checked out
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.save();
+  eraseToken(res);
+
+  res.status(200).json({
+    status: 'success',
+    user: user,
+    message: 'please log in again!'
+  });
+});
+
 exports.routeProtection = catchAsync(async (req, res, next) => {
   // 1) extract token from the request header under 'authorization', the format is 'Bearer token'
   let token;
@@ -208,7 +254,7 @@ exports.routeProtection = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
-  if (!token) {
+  if (!token || token === 'undefined') {
     return next(new ErrorGenerator('The user is not logged in', 401));
   }
   // 2) verify token
@@ -222,7 +268,7 @@ exports.routeProtection = catchAsync(async (req, res, next) => {
     // issue a new jwt token when the old one has expired
     if (err.message === 'jwt expired') {
       // check the validity of the refresh token
-      const refreshToken = req.headers.refreshtoken.split(' ')[1];
+      const refreshToken = req.headers.refreshToken.split(' ')[1];
       decodedPayload = await utility.promisify(jwt.verify)(
         refreshToken,
         process.env.JWT_REFERSH_SECRET
