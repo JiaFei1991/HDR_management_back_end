@@ -1,12 +1,12 @@
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+
 const emailer = require('../util/emailer');
 const User = require('../models/userModel');
 const catchAsync = require('../util/catchAsync');
-const errorGenerator = require('../util/errorGenerator');
+const ErrorGenerator = require('../util/errorGenerator');
 const templateFilling = require('../util/templateFilling');
 const controllerFnGenerator = require('./controllerFnGenerator');
-
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
 
 exports.getAllUsers = controllerFnGenerator.getAll(User);
 exports.getOneUser = controllerFnGenerator.getOne(User);
@@ -18,7 +18,7 @@ exports.deleteAllUsers = controllerFnGenerator.deleteAll(User);
 exports.createSupervisor = catchAsync(async (req, res, next) => {
   if (!req.body.role) {
     return next(
-      new errorGenerator('No role supplied to create new user.', 400)
+      new ErrorGenerator('No role supplied to create new user.', 400)
     );
   }
   if (req.body.role === 'supervisor') {
@@ -64,10 +64,6 @@ exports.createSupervisor = catchAsync(async (req, res, next) => {
 });
 
 exports.createProtectedUser = catchAsync(async (req, res, next) => {
-  console.log('accessed createProtectedUser function!');
-  console.log('-------------------req.body------------------');
-  console.log(req.body);
-
   // if accepted, check the admin email and password to verify identity
   if (req.body.clickedButton === 'Accept') {
     if (!req.body.adminEmail || !req.body.adminPassword) {
@@ -81,6 +77,16 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
     );
     if (!user) {
       res.status(404).send(templateFilling.fill('the admin does not exists'));
+      return;
+    }
+    if (user.role !== 'admin') {
+      res
+        .status(400)
+        .send(
+          templateFilling.fill(
+            'The email supplied does not belong to an admin.'
+          )
+        );
       return;
     }
     // 3) check if the password match
@@ -105,12 +111,13 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
     }
     // send an email to user with random password once account creation is successful
     const emailOptions = {
-      // destination: req.body.email,
+      // NOTE: destination: req.body.email,
       destination: 'feijiajidangao@gmail.com',
       subject: 'Successful account creation notice',
       text: `Your account is successfully created, use the following password to log in:${randomPassword}. You are encouraged to change the password immediately.`,
       debug: false,
-      successMessage: 'Success notice has been send to the user!'
+      successMessage: 'Success notice has been send to the user!',
+      appOrMailbox: 'mailbox'
     };
     // the execution will terminate after sending the email
     if (await emailer.sendEmail(res, next, emailOptions)) return;
@@ -118,17 +125,17 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
   // if rejected, send an email notifying the applicant
   if (req.body.clickedButton === 'Reject') {
     const emailOptions = {
-      // destination: req.body.email,
+      // NOTE: destination: req.body.email,
       destination: 'feijiajidangao@gmail.com',
       subject: 'Rejected account creation notice',
       text: `Your request to create a supervisor's account has been rejected by an admin.`,
       debug: false,
-      successMessage: 'Reject notice has been send to the user!'
+      successMessage: 'Reject notice has been send to the user!',
+      appOrMailbox: 'mailbox'
     };
     // the execution will terminate after sending the email
-    if (await emailer.sendEmail(res, next, emailOptions)) return;
+    await emailer.sendEmail(res, next, emailOptions);
   }
   // in both cases, add html response to the browser indicating the status of account creation to admin
-  res.status(200).send(templateFilling.fill('Operation complete.'));
-  return;
+  // res.status(200).send(templateFilling.fill('Operation complete.'));
 });

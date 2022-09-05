@@ -110,7 +110,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     '<p>Enter a new password and password confirm to reset your password.</p>' +
     '</div>';
   // 5) send the email
-  // TODO: the destination email is suppose to be users, change it before going to prod
+  // NOTE: the destination email is suppose to be users, change it before going to prod
   const emailOptions = {
     destination: 'feijiajidangao@gmail.com',
     subject: 'Password reset (valid for 10 mins)',
@@ -118,10 +118,11 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     replyHtml: replyHtml,
     debug: true,
     successMessage: 'Token sent to email!',
-    user: user
+    user: user,
+    appOrMailbox: 'app'
   };
 
-  if (await emailer.sendEmail(res, next, emailOptions)) return;
+  await emailer.sendEmail(res, next, emailOptions);
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
@@ -165,7 +166,6 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
         'You have successfully changed the password, login again!'
       )
     );
-  return;
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {

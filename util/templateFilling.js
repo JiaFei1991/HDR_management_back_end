@@ -1,10 +1,8 @@
 const fs = require('fs');
 
-var templateFile = fs.readFileSync(
-  './staticFiles/resetPasswordTemplate.html',
+const templateFile = fs.readFileSync(
+  './staticFiles/returnMessageTemplate.html',
   'utf-8'
 );
 
-exports.fill = (message) => {
-  return templateFile.replace('PLACEHOLDER', message);
-};
+exports.fill = (message) => templateFile.replace('PLACEHOLDER', message);

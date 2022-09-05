@@ -16,7 +16,6 @@ router
   .post(authControllers.routeProtection, authControllers.updatePassword);
 router
   .route('/protectedUserCreation')
-  //authControllers.routeProtection,
   .post(userControllers.createProtectedUser);
 router
   .route('/logout')

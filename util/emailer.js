@@ -1,9 +1,10 @@
 const nodemailer = require('nodemailer');
-const ErrorGenerator = require('../util/errorGenerator');
+const ErrorGenerator = require('./errorGenerator');
+const templateFilling = require('./templateFilling');
 
 exports.sendEmail = async (res, next, options) => {
-  const message = {
-    from: 'jia_fei1991@hotmail.com',
+  const messageEmail = {
+    from: process.env.EMAIL_ADDRESS,
     to: options.destination,
     subject: options.subject,
     text: options.text,
@@ -11,7 +12,7 @@ exports.sendEmail = async (res, next, options) => {
   };
 
   // create reusable transporter object using the default SMTP transport
-  let transporterOptions = {
+  const transporterOptions = {
     host: 'smtp-mail.outlook.com',
     port: 587,
     secure: false, // true for 465, false for other ports
@@ -31,14 +32,20 @@ exports.sendEmail = async (res, next, options) => {
   const transporter = nodemailer.createTransport(transporterOptions);
   // try send out email
   try {
-    const info = await transporter.sendMail(message);
+    const info = await transporter.sendMail(messageEmail);
     console.log('Message sent: %s', info.messageId);
 
     // TODO: need to customize return message depending on whether the user is in mailbox or app
-    res.status(200).json({
-      status: 'success',
-      message: options.successMessage
-    });
+    if (options.appOrMailbox === 'app') {
+      res.status(200).json({
+        status: 'success',
+        message: options.successMessage
+      });
+    }
+
+    if (options.appOrMailbox === 'mailbox') {
+      res.status(200).send(templateFilling.fill(options.successMessage));
+    }
 
     return true;
     // in case of failure, erase both field and send error to user
