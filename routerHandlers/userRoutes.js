@@ -6,12 +6,18 @@ const scheduleRouter = require('./scheduleRoutes');
 
 const router = express.Router();
 
-router.route('/signup').post(userControllers.createUser);
+router
+  .route('/signup')
+  .post(userControllers.createSupervisor, userControllers.createUser);
 router.route('/login').post(authControllers.login);
 router.route('/forgetPassword').post(authControllers.forgetPassword);
 router
   .route('/updatePassword')
   .post(authControllers.routeProtection, authControllers.updatePassword);
+router
+  .route('/protectedUserCreation')
+  //authControllers.routeProtection,
+  .post(userControllers.createProtectedUser);
 router
   .route('/logout')
   .post(authControllers.routeProtection, authControllers.logout);

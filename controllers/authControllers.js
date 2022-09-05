@@ -2,13 +2,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const utility = require('util');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
-const path = require('path');
-const fs = require('fs');
 
+const emailer = require('../util/emailer');
 const User = require('../models/userModel');
-const ErrorGenerator = require('../util/errorGenerator');
 const catchAsync = require('../util/catchAsync');
+const ErrorGenerator = require('../util/errorGenerator');
+const templateFilling = require('../util/templateFilling');
 
 const jwtTokenCreation = (res, user, justJwt) => {
   // issue the jwt token to user and store it as secured cookie
@@ -110,64 +109,22 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     '</form>' +
     '<p>Enter a new password and password confirm to reset your password.</p>' +
     '</div>';
-
-  const message = {
-    from: 'jia_fei1991@hotmail.com',
-    to: 'feijiajidangao@gmail.com',
+  // 5) send the email
+  // TODO: the destination email is suppose to be users, change it before going to prod
+  const emailOptions = {
+    destination: 'feijiajidangao@gmail.com',
     subject: 'Password reset (valid for 10 mins)',
     text: `This is the reset URL:${resetURL}`,
-    html: replyHtml
+    replyHtml: replyHtml,
+    debug: true,
+    successMessage: 'Token sent to email!',
+    user: user
   };
-  // 5) send the email
-  // create reusable transporter object using the default SMTP transport
-  const transporter = nodemailer.createTransport({
-    host: 'smtp-mail.outlook.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    // logger: true,
-    // debug: true,
-    secureConnection: false,
-    auth: {
-      user: process.env.EMAIL_ADDRESS,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: {
-      rejectUnAuthorized: true
-    }
-  });
 
-  try {
-    const info = await transporter.sendMail(message);
-    console.log('Message sent: %s', info.messageId);
-
-    res.status(200).json({
-      status: 'success',
-      message: 'Token sent to email!'
-    });
-    // in case of failure, erase both field and send error to user
-  } catch (err) {
-    console.log(err);
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    return next(
-      new ErrorGenerator(
-        'There was an error sending the email. Try again later!'
-      ),
-      500
-    );
-  }
+  if (await emailer.sendEmail(res, next, emailOptions)) return;
 });
 
 exports.resetPassword = catchAsync(async (req, res, next) => {
-  // console.log(req.body);
-  // console.log(req.params.resetToken);
-  let templateFile = fs.readFileSync(
-    './staticFiles/resetPasswordTemplate.html',
-    'utf-8'
-  );
-
   // 1) hash the reset token and find the user
   const hashedToken = crypto
     .createHash('sha256')
@@ -176,13 +133,10 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ passwordResetToken: hashedToken });
   if (!user) {
-    templateFile = templateFile.replace(
-      'PLACEHOLDER',
-      'No user possess this reset token.'
-    );
-    res.status(404).send(templateFile);
+    res
+      .status(404)
+      .send(templateFilling.fill('No user possess this reset token.'));
     return;
-    // return next(new ErrorGenerator('No user possess this reset token.'), 404);
   }
   // 2) check if the token has expired
   if (Date.now() > user.passwordResetExpires) {
@@ -190,11 +144,11 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
-    templateFile = templateFile.replace(
-      'PLACEHOLDER',
-      'The reset token has expired, please try again.'
-    );
-    res.status(401).send(templateFile);
+    res
+      .status(401)
+      .send(
+        templateFilling.fill('The reset token has expired, please try again.')
+      );
     return;
   }
   // 3) set new password and save document, the document middleware will encrypt the new password automatically
@@ -204,11 +158,14 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
-  templateFile = templateFile.replace(
-    'PLACEHOLDER',
-    'You have successfully changed the password, login again!'
-  );
-  res.status(200).send(templateFile);
+  res
+    .status(200)
+    .send(
+      templateFilling.fill(
+        'You have successfully changed the password, login again!'
+      )
+    );
+  return;
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
