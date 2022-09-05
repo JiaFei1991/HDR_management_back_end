@@ -19,7 +19,7 @@ router
   .post(userControllers.createProtectedUser);
 router
   .route('/logout')
-  .post(authControllers.routeProtection, authControllers.logout);
+  .get(authControllers.routeProtection, authControllers.logout);
 router.route('/:resetToken/resetPassword').post(authControllers.resetPassword);
 
 // when a user id is present in a route followed by the 'session' keyword

@@ -33,8 +33,12 @@ const jwtTokenCreation = (res, user, justJwt) => {
 };
 
 const eraseToken = (res) => {
-  res.cookie('jwt', undefined);
-  res.cookie('jwtRefresh', undefined);
+  const cookieOptions = {
+    expires: new Date(Date.now() + 1000),
+    httpOnly: true
+  };
+  res.cookie('jwt', 'loggedOut', cookieOptions);
+  res.cookie('jwtRefresh', 'loggedOut', cookieOptions);
 };
 
 exports.logout = catchAsync(async (req, res, next) => {
@@ -202,18 +206,20 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.routeProtection = catchAsync(async (req, res, next) => {
-  // 1) extract token from the request header under 'authorization', the format is 'Bearer token'
+const checkToken = (headerField, next) => {
   let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
+  if (headerField && headerField.startsWith('Bearer')) {
+    token = headerField.split(' ')[1];
   }
-  if (!token || token === 'undefined') {
+  if (!token || token === 'loggedOut') {
     return next(new ErrorGenerator('The user is not logged in', 401));
   }
+  return token;
+};
+
+exports.routeProtection = catchAsync(async (req, res, next) => {
+  // 1) extract token from the request header under 'authorization', the format is 'Bearer token'
+  const token = checkToken(req.headers.authorization, next);
   // 2) verify token
   let decodedPayload;
   try {
@@ -221,15 +227,30 @@ exports.routeProtection = catchAsync(async (req, res, next) => {
       token,
       process.env.JWT_SECRET
     );
+    if (!decodedPayload.id || !decodedPayload.iat) {
+      return next(
+        new ErrorGenerator(
+          'The user is no longer logger in or the token is currupted.',
+          403
+        )
+      );
+    }
   } catch (err) {
     // issue a new jwt token when the old one has expired
     if (err.message === 'jwt expired') {
       // check the validity of the refresh token
-      const refreshToken = req.headers.refreshToken.split(' ')[1];
-      decodedPayload = await utility.promisify(jwt.verify)(
-        refreshToken,
-        process.env.JWT_REFERSH_SECRET
-      );
+      // NOTE: headers are converted to lower cases automatically
+      const refreshToken = checkToken(req.headers.refreshtoken, next);
+      try {
+        decodedPayload = await utility.promisify(jwt.verify)(
+          refreshToken,
+          process.env.JWT_REFERSH_SECRET
+        );
+      } catch (innerErr) {
+        if (innerErr.message === 'jwt expired') {
+          return next(new ErrorGenerator('The refresh token has expired', 403));
+        }
+      }
       const user = await User.findById(decodedPayload.id);
       if (!user)
         return next(
