@@ -136,6 +136,4 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
     // the execution will terminate after sending the email
     await emailer.sendEmail(res, next, emailOptions);
   }
-  // in both cases, add html response to the browser indicating the status of account creation to admin
-  // res.status(200).send(templateFilling.fill('Operation complete.'));
 });

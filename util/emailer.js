@@ -35,7 +35,6 @@ exports.sendEmail = async (res, next, options) => {
     const info = await transporter.sendMail(messageEmail);
     console.log('Message sent: %s', info.messageId);
 
-    // TODO: need to customize return message depending on whether the user is in mailbox or app
     if (options.appOrMailbox === 'app') {
       res.status(200).json({
         status: 'success',
