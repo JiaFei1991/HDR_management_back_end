@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema(
       required: [true, 'A user must have an age.'],
       max: [99, 'A student cannot be older than 99 years old.']
     },
+    avatar: {
+      type: String,
+      default: 'default.jpg'
+    },
     email: {
       type: String,
       unique: true,

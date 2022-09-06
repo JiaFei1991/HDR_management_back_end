@@ -208,6 +208,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
 const checkToken = (headerField, next) => {
   let token;
+  // TODO: needs more check such as length of the token to see if the user has a valid token or not
   if (headerField && headerField.startsWith('Bearer')) {
     token = headerField.split(' ')[1];
   }

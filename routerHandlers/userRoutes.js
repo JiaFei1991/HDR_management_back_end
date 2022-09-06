@@ -42,7 +42,12 @@ router
 router
   .route('/:id')
   .get(authControllers.interStudentProtection, userControllers.getOneUser)
-  .patch(authControllers.interStudentProtection, userControllers.updateUser)
+  .patch(
+    authControllers.interStudentProtection,
+    userControllers.uploadAvatar,
+    userControllers.resizeProfile,
+    userControllers.updateUser
+  )
   .delete(
     authControllers.restrictTo('admin', 'supervisor'),
     userControllers.deleteUser

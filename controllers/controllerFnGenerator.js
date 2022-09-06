@@ -116,6 +116,7 @@ exports.getOne = (Model) =>
 exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
     const patchBody = patchFieldCheck(Model, req);
+    if (req.file) patchBody.avatar = req.file.filename;
     const updatedEntry = await Model.findOneAndUpdate(
       { _id: req.params.id },
       patchBody,

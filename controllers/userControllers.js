@@ -1,5 +1,7 @@
+const sharp = require('sharp');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const multer = require('multer');
 
 const emailer = require('../util/emailer');
 const User = require('../models/userModel');
@@ -14,6 +16,35 @@ exports.createUser = controllerFnGenerator.createOne(User);
 exports.updateUser = controllerFnGenerator.updateOne(User);
 exports.deleteUser = controllerFnGenerator.deleteOne(User);
 exports.deleteAllUsers = controllerFnGenerator.deleteAll(User);
+
+const multerStorage = multer.memoryStorage();
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image')) {
+    cb(null, true);
+  } else {
+    cb(new ErrorGenerator('The uploaded file must be an image.', 400));
+  }
+};
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: multerFilter
+});
+
+exports.uploadAvatar = upload.single('avatar');
+
+exports.resizeProfile = (req, res, next) => {
+  if (!req.file) return next();
+
+  req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
+
+  sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/profiles/${req.file.filename}`);
+
+  next();
+};
 
 exports.createSupervisor = catchAsync(async (req, res, next) => {
   if (!req.body.role) {
