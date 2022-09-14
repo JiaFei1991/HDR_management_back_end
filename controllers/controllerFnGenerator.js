@@ -92,6 +92,7 @@ exports.getAll = (Model) =>
 
     const dataObj = {};
     dataObj[Model.collection.name] = allEntries;
+
     res.status(200).json(returnObjConstruction(dataObj));
   });
 
