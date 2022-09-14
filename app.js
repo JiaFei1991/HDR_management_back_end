@@ -31,6 +31,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static('public'));
+
 app.use('/HDRapi/v1/users', userRouter);
 app.use('/HDRapi/v1/projects', projectRouter);
 app.use('/HDRapi/v1/schedules', scheduleRouter);
