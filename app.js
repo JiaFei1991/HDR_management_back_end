@@ -31,7 +31,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'DELETE, POST, GET, OPTIONS');
   res.header(
     'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With'
+    'Content-Type, Authorization, X-Requested-With, refreshtoken'
   );
   res.header('Content-Type', 'application/json');
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');

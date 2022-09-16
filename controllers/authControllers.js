@@ -9,20 +9,26 @@ const catchAsync = require('../util/catchAsync');
 const ErrorGenerator = require('../util/errorGenerator');
 const templateFilling = require('../util/templateFilling');
 
-const jwtTokenCreation = (res, user, justJwt) => {
-  // issue the jwt token to user and store it as secured cookie
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPRIRESIN
-  });
+const getCookieOptions = (expirationTime) => {
   const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + expirationTime),
     maxAge: 10000,
     domain: 'localhost',
     // TODO: switch to true in prod
     httpOnly: false
   };
+};
+
+const jwtTokenCreation = (res, user, justJwt) => {
+  // issue the jwt token to user and store it as secured cookie
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPRIRESIN
+  });
+
+  const cookieOptions = getCookieOptions(
+    process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+  );
+
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
   res.cookie('jwt', token, cookieOptions);
 
@@ -36,13 +42,7 @@ const jwtTokenCreation = (res, user, justJwt) => {
 };
 
 const eraseToken = (res) => {
-  const cookieOptions = {
-    expires: new Date(Date.now() + 1000),
-    maxAge: 10000,
-    domain: 'localhost',
-    // TODO: switch to true in prod
-    httpOnly: false
-  };
+  const cookieOptions = getCookieOptions(1000);
   res.cookie('jwt', 'loggedOut', cookieOptions);
   res.cookie('jwtRefresh', 'loggedOut', cookieOptions);
 };
@@ -287,6 +287,26 @@ exports.routeProtection = catchAsync(async (req, res, next) => {
   // 5) go to the next middleware if verification is successful,
   // pass the authorized user info to the next middleware/controller
   req.user = currentUser;
+  // 6) set jwt tokens as cookies in the response if the user has successfully logged in
+  const cookieString = req.headers.cookie;
+  if (!cookieString) {
+    return next(
+      new ErrorGenerator(
+        'auth cookies are not present in the request header',
+        400
+      )
+    );
+  }
+  const cookieObj = {};
+  cookieString.split('; ').forEach((ele) => {
+    const [name, value] = ele.split('=');
+    cookieObj[name] = value;
+  });
+  const cookieOptions = getCookieOptions(
+    process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+  );
+  res.cookie('jwt', cookieObj.jwt, cookieOptions);
+  res.cookie('jwtRefresh', cookieObj.jwtRefresh, cookieOptions);
   next();
 });
 
