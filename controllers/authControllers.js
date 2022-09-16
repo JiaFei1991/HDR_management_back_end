@@ -18,7 +18,10 @@ const jwtTokenCreation = (res, user, justJwt) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
-    httpOnly: true
+    maxAge: 10000,
+    domain: 'localhost',
+    // TODO: switch to true in prod
+    httpOnly: false
   };
   if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
   res.cookie('jwt', token, cookieOptions);
@@ -35,7 +38,10 @@ const jwtTokenCreation = (res, user, justJwt) => {
 const eraseToken = (res) => {
   const cookieOptions = {
     expires: new Date(Date.now() + 1000),
-    httpOnly: true
+    maxAge: 10000,
+    domain: 'localhost',
+    // TODO: switch to true in prod
+    httpOnly: false
   };
   res.cookie('jwt', 'loggedOut', cookieOptions);
   res.cookie('jwtRefresh', 'loggedOut', cookieOptions);

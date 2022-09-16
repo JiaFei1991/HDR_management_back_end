@@ -21,13 +21,26 @@ app.use(express.json());
 app.use(
   bodyParser.urlencoded({
     limit: '50mb',
-    extended: true,
+    extended: false,
     parameterLimit: 1000
   })
 );
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Methods', 'DELETE, POST, GET, OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With'
+  );
+  res.header('Content-Type', 'application/json');
+  res.header('Access-Control-Expose-Headers', 'Set-Cookie');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end();
+    return;
+  }
   next();
 });
 

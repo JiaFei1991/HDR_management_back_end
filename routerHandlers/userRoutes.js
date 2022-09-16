@@ -28,21 +28,21 @@ router.use('/:userId/projects', projectRouter);
 router.use('/:userId/schedules', scheduleRouter);
 
 // access to all following routes require login
-// router.use(authControllers.routeProtection);
+router.use(authControllers.routeProtection);
 router
   .route('/')
-  // .get(
-  //   authControllers.checkNestedRoute,
-  //   authControllers.restrictTo('admin', 'supervisor'),
-  //   authControllers.roleBasedQueryFilling,
-  //   userControllers.getAllUsers
-  // )
   .get(
-    // authControllers.checkNestedRoute,
-    // authControllers.restrictTo('admin', 'supervisor'),
-    // authControllers.roleBasedQueryFilling,
+    authControllers.checkNestedRoute,
+    authControllers.restrictTo('admin', 'supervisor'),
+    authControllers.roleBasedQueryFilling,
     userControllers.getAllUsers
   )
+  // .get(
+  //   // authControllers.checkNestedRoute,
+  //   // authControllers.restrictTo('admin', 'supervisor'),
+  //   // authControllers.roleBasedQueryFilling,
+  //   userControllers.getAllUsers
+  // )
   .delete(authControllers.restrictTo('admin'), userControllers.deleteAllUsers);
 
 router
