@@ -9,15 +9,13 @@ const catchAsync = require('../util/catchAsync');
 const ErrorGenerator = require('../util/errorGenerator');
 const templateFilling = require('../util/templateFilling');
 
-const getCookieOptions = (expirationTime) => {
-  const cookieOptions = {
-    expires: new Date(Date.now() + expirationTime),
-    maxAge: 10000,
-    domain: 'localhost',
-    // TODO: switch to true in prod
-    httpOnly: false
-  };
-};
+const getCookieOptions = (expirationTime) => ({
+  expires: new Date(Date.now() + expirationTime),
+  maxAge: 10000,
+  domain: 'localhost',
+  // TODO: switch to true in prod
+  httpOnly: false
+});
 
 const jwtTokenCreation = (res, user, justJwt) => {
   // issue the jwt token to user and store it as secured cookie
