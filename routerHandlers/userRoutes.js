@@ -9,14 +9,15 @@ const router = express.Router();
 router
   .route('/signup')
   .post(
+    userControllers.createSupervisor,
     userControllers.uploadAvatar,
     userControllers.resizeProfileCreate,
-    userControllers.createSupervisor,
     userControllers.createUser
   );
 router.route('/login').post(authControllers.login);
 router.route('/logout').get(authControllers.logout);
-router.route('/supervisors').get(userControllers.allSupervisors);
+router.route('/supervisors').get(userControllers.allSupervisorsName);
+router.route('/students').get(userControllers.allStudentName);
 router.route('/forgetPassword').post(authControllers.forgetPassword);
 router
   .route('/updatePassword')
@@ -41,12 +42,6 @@ router
     authControllers.roleBasedQueryFilling,
     userControllers.getAllUsers
   )
-  // .get(
-  //   // authControllers.checkNestedRoute,
-  //   // authControllers.restrictTo('admin', 'supervisor'),
-  //   // authControllers.roleBasedQueryFilling,
-  //   userControllers.getAllUsers
-  // )
   .delete(authControllers.restrictTo('admin'), userControllers.deleteAllUsers);
 
 router

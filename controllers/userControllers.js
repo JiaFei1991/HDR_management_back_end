@@ -16,6 +16,11 @@ exports.createUser = controllerFnGenerator.createOne(User);
 exports.updateUser = controllerFnGenerator.updateOne(User);
 exports.deleteUser = controllerFnGenerator.deleteOne(User);
 exports.deleteAllUsers = controllerFnGenerator.deleteAll(User);
+exports.allStudentName = controllerFnGenerator.getAllNames(User, 'student');
+exports.allSupervisorsName = controllerFnGenerator.getAllNames(
+  User,
+  'supervisor'
+);
 
 const multerStorage = multer.memoryStorage();
 const multerFilter = (req, file, cb) => {
@@ -61,12 +66,6 @@ exports.resizeProfileCreate = (req, res, next) => {
 
   next();
 };
-
-exports.allSupervisors = catchAsync(async (req, res, next) => {
-  const allSupervisors = await User.find({ role: 'supervisor' });
-
-  res.status(200).json({ status: 'success', data: allSupervisors });
-});
 
 exports.createSupervisor = catchAsync(async (req, res, next) => {
   if (!req.body.role) {

@@ -194,3 +194,14 @@ exports.createOne = (Model) =>
       data: dataObj
     });
   });
+
+exports.getAllNames = (Model, role) =>
+  catchAsync(async (req, res, next) => {
+    const allUsers = await Model.find({ role: `${role}` });
+    const resData = allUsers.map((user) => ({
+      _id: user._id,
+      name: user.name
+    }));
+
+    res.status(200).json({ status: 'success', data: resData });
+  });
