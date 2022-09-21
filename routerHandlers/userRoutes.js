@@ -8,8 +8,15 @@ const router = express.Router();
 
 router
   .route('/signup')
-  .post(userControllers.createSupervisor, userControllers.createUser);
+  .post(
+    userControllers.uploadAvatar,
+    userControllers.resizeProfileCreate,
+    userControllers.createSupervisor,
+    userControllers.createUser
+  );
 router.route('/login').post(authControllers.login);
+router.route('/logout').get(authControllers.logout);
+router.route('/supervisors').get(userControllers.allSupervisors);
 router.route('/forgetPassword').post(authControllers.forgetPassword);
 router
   .route('/updatePassword')
@@ -17,13 +24,10 @@ router
 router
   .route('/protectedUserCreation')
   .post(userControllers.createProtectedUser);
-router
-  .route('/logout')
-  .get(authControllers.routeProtection, authControllers.logout);
 router.route('/:resetToken/resetPassword').post(authControllers.resetPassword);
 
-// when a user id is present in a route followed by the 'session' keyword
-// use the sessionRouter, passing the user id using nested routes
+// when a user id is present in a route followed by the 'project' keyword
+// use the projectRouter, passing the user id using nested routes
 router.use('/:userId/projects', projectRouter);
 router.use('/:userId/schedules', scheduleRouter);
 
@@ -51,7 +55,7 @@ router
   .patch(
     authControllers.interStudentProtection,
     userControllers.uploadAvatar,
-    userControllers.resizeProfile,
+    userControllers.resizeProfileUpdate,
     userControllers.updateUser
   )
   .delete(

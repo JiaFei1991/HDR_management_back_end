@@ -32,7 +32,7 @@ const upload = multer({
 
 exports.uploadAvatar = upload.single('avatar');
 
-exports.resizeProfile = (req, res, next) => {
+exports.resizeProfileUpdate = (req, res, next) => {
   if (!req.file) return next();
 
   req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
@@ -45,6 +45,28 @@ exports.resizeProfile = (req, res, next) => {
 
   next();
 };
+
+exports.resizeProfileCreate = (req, res, next) => {
+  if (!req.file) return next();
+
+  const newFileName = `create-${req.body.name}-${Date.now()}.jpeg`;
+  req.file.filename = newFileName;
+  req.body.avatar = newFileName;
+
+  sharp(req.file.buffer)
+    .resize(500, 500)
+    .toFormat('jpeg')
+    .jpeg({ quality: 90 })
+    .toFile(`public/profiles/${req.file.filename}`);
+
+  next();
+};
+
+exports.allSupervisors = catchAsync(async (req, res, next) => {
+  const allSupervisors = await User.find({ role: 'supervisor' });
+
+  res.status(200).json({ status: 'success', data: allSupervisors });
+});
 
 exports.createSupervisor = catchAsync(async (req, res, next) => {
   if (!req.body.role) {

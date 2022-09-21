@@ -34,6 +34,7 @@ app.use((req, res, next) => {
     'Content-Type, Authorization, X-Requested-With, refreshtoken'
   );
   res.header('Content-Type', 'application/json');
+  // res.header('Content-Type', 'multipart/form-data');
   res.header('Access-Control-Expose-Headers', 'Set-Cookie');
   res.header('Access-Control-Allow-Credentials', 'true');
 
@@ -53,5 +54,14 @@ app.use('/HDRapi/v1/sessions', sessionRouter);
 app.use('/HDRapi/v1/tickets', ticketRouter);
 
 app.use(globalErrorHandler);
+
+app.all('*', (req, res, next) => {
+  res.status(404).json({
+    status: 'fail',
+    message: `Can't find ${req.originalUrl} on this server!`
+  });
+
+  next();
+});
 
 module.exports = app;

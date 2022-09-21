@@ -10,8 +10,7 @@ const ErrorGenerator = require('../util/errorGenerator');
 const templateFilling = require('../util/templateFilling');
 
 const getCookieOptions = (expirationTime) => ({
-  expires: new Date(Date.now() + expirationTime),
-  maxAge: 10000,
+  maxAge: new Date(Date.now() + expirationTime),
   domain: 'localhost',
   // TODO: switch to true in prod
   httpOnly: false
@@ -40,15 +39,15 @@ const jwtTokenCreation = (res, user, justJwt) => {
 };
 
 const eraseToken = (res) => {
-  const cookieOptions = getCookieOptions(1000);
+  const cookieOptions = getCookieOptions(0);
   res.cookie('jwt', 'loggedOut', cookieOptions);
   res.cookie('jwtRefresh', 'loggedOut', cookieOptions);
 };
 
 exports.logout = catchAsync(async (req, res, next) => {
-  if (!req.user) {
-    return next(new ErrorGenerator('User is not logged in.', 401));
-  }
+  // if (!req.user) {
+  //   return next(new ErrorGenerator('User is not logged in.', 401));
+  // }
 
   eraseToken(res);
   res.status(200).json({
