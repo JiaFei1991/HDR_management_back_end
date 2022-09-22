@@ -123,7 +123,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     subject: 'Password reset (valid for 10 mins)',
     text: `This is the reset URL:${resetURL}`,
     replyHtml: replyHtml,
-    debug: true,
+    debug: false,
     successMessage: 'Token sent to email!',
     user: user,
     appOrMailbox: 'app'
