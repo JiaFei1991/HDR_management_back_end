@@ -143,6 +143,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     res
       .status(404)
+      .set('Content-Type', 'text/html')
       .send(templateFilling.fill('No user possess this reset token.'));
     return;
   }
@@ -154,6 +155,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
     res
       .status(401)
+      .set('Content-Type', 'text/html')
       .send(
         templateFilling.fill('The reset token has expired, please try again.')
       );
@@ -168,6 +170,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   res
     .status(200)
+    .set('Content-Type', 'text/html')
     .send(
       templateFilling.fill(
         'You have successfully changed the password, login again!'

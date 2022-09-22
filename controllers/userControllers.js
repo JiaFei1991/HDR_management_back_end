@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const sharp = require('sharp');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -35,7 +37,7 @@ const upload = multer({
   fileFilter: multerFilter
 });
 
-exports.uploadAvatar = upload.single('avatar');
+exports.uploadMultipartForm = upload.single('avatar');
 
 exports.resizeProfileUpdate = (req, res, next) => {
   if (!req.file) return next();
@@ -84,15 +86,21 @@ exports.createSupervisor = catchAsync(async (req, res, next) => {
       `<form action="${creationURL}" method="POST">` +
       '<label for="name">Name:</label><br>' +
       `<input name="name" type="text" id="name" value="${req.body.name}"><br>` +
-      '<label for="Age">Age:</label><br>' +
-      `<input name="age" type="text" id="age" value="${req.body.age}"><br>` +
-      '<label for="Age">Email:</label><br>' +
+      '<label for="DoB">DoB:</label><br>' +
+      `<input name="DoB" type="text" id="DoB" value="${req.body.DoB}"><br>` +
+      '<label for="email">Email:</label><br>' +
       `<input name="email" type="text" id="email" value="${req.body.email}"><br>` +
-      '<label for="Age">Role:</label><br>' +
+      '<label for="role">Role:</label><br>' +
       `<input name="role" type="text" id="role" value="${req.body.role}"><br>` +
-      '<label for="Age">Admin email:</label><br>' +
+      '<label for="students">Students:</label><br>' +
+      `<input name="students" type="text" id="students" value="${req.body.students}"><br>` +
+      '<label for="studentIds">StudentIds:</label><br>' +
+      `<input name="studentIds" type="text" id="studentIds" value="${req.body.studentIds}"><br>` +
+      '<label for="avatar">Avatar:</label><br>' +
+      `<input name="avatar" type="text" id="avatar" value="${req.body.avatar}"><br>` +
+      '<label for="adminEmail">Admin email:</label><br>' +
       `<input name="adminEmail" type="text" id="adminEmail"><br>` +
-      '<label for="Age">Admin password:</label><br>' +
+      '<label for="adminPassword">Admin password:</label><br>' +
       `<input name="adminPassword" type="password" id="adminPassword"><br><br>` +
       '<input type="submit" name="clickedButton" value="Accept">' +
       '<input type="submit" name="clickedButton" value="Reject">' +
@@ -109,31 +117,44 @@ exports.createSupervisor = catchAsync(async (req, res, next) => {
       successMessage: 'Request has been send to an admin!'
     };
     // the execution will terminate after sending the email
-    if (await emailer.sendEmail(res, next, emailOptions)) return;
+    if (await emailer.sendEmail(res, next, emailOptions)) {
+      res.status(200).json({
+        status: 'success',
+        data: 'Request has been send to an admin!'
+      });
+    }
   }
   // if the role is not supervisor, move on to the next middleware that creates student
   next();
 });
 
 exports.createProtectedUser = catchAsync(async (req, res, next) => {
+  console.log(req.body);
   // if accepted, check the admin email and password to verify identity
   if (req.body.clickedButton === 'Accept') {
     if (!req.body.adminEmail || !req.body.adminPassword) {
       res
         .status(400)
-        .send(templateFilling.fill('must provide both email and password'));
+        .set('Content-Type', 'text/html')
+        .send(
+          templateFilling.fill('must provide both admin email and password')
+        );
       return;
     }
     const user = await User.findOne({ email: req.body.adminEmail }).select(
       '+password'
     );
     if (!user) {
-      res.status(404).send(templateFilling.fill('the admin does not exists'));
+      res
+        .status(404)
+        .set('Content-Type', 'text/html')
+        .send(templateFilling.fill('the admin does not exists'));
       return;
     }
     if (user.role !== 'admin') {
       res
         .status(400)
+        .set('Content-Type', 'text/html')
         .send(
           templateFilling.fill(
             'The email supplied does not belong to an admin.'
@@ -143,22 +164,30 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
     }
     // 3) check if the password match
     if (!(await bcrypt.compare(req.body.adminPassword, user.password))) {
-      res.status(400).send(templateFilling.fill('the password is incorrect'));
+      res
+        .status(400)
+        .set('Content-Type', 'text/html')
+        .send(templateFilling.fill('the password is incorrect'));
       return;
     }
     // pass the req.body with randomly generated password to User.create() if admin identity verification is successful
     const randomPassword = crypto.randomBytes(10).toString('hex');
     const body = {
       name: req.body.name,
-      age: req.body.age,
+      DoB: req.body.DoB,
       email: req.body.email,
       role: req.body.role,
+      avatar: req.body.avatar,
+      students: req.body.studentIds.split(','),
       password: randomPassword,
       passwordConfirm: randomPassword
     };
     const newSupervisor = await User.create(body);
     if (!newSupervisor) {
-      res.status(400).send(templateFilling.fill('creation failed, try again.'));
+      res
+        .status(400)
+        .set('Content-Type', 'text/html')
+        .send(templateFilling.fill('creation failed, try again.'));
       return;
     }
     // send an email to user with random password once account creation is successful
@@ -176,8 +205,22 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
   }
   // if rejected, send an email notifying the applicant
   if (req.body.clickedButton === 'Reject') {
+    // delete profile picture
+    const absolutePath = path.resolve('./public/profiles');
+    const filenames = fs.readdirSync(`${absolutePath}`);
+    filenames.forEach((filename) => {
+      if (filename.startsWith(`create-${req.body.name}`)) {
+        fs.unlink(`${absolutePath}/${filename}`, (err) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log('profile picture deleted!');
+          }
+        });
+      }
+    });
     const emailOptions = {
-      // NOTE: destination: req.body.email,
+      // TODO: destination: req.body.email,
       destination: 'feijiajidangao@gmail.com',
       subject: 'Rejected account creation notice',
       text: `Your request to create a supervisor's account has been rejected by an admin.`,
@@ -186,6 +229,13 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
       appOrMailbox: 'mailbox'
     };
     // the execution will terminate after sending the email
-    await emailer.sendEmail(res, next, emailOptions);
+    if (await emailer.sendEmail(res, next, emailOptions)) return;
   }
 });
+
+// exports.test = catchAsync(async (req, res, next) => {
+//   res
+//     .status(200)
+//     .set('Content-Type', 'text/html')
+//     .send(templateFilling.fill('test message'));
+// });

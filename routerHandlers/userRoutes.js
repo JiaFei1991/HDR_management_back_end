@@ -6,12 +6,14 @@ const scheduleRouter = require('./scheduleRoutes');
 
 const router = express.Router();
 
+// router.route('/test').get(userControllers.test);
+
 router
   .route('/signup')
   .post(
-    userControllers.createSupervisor,
-    userControllers.uploadAvatar,
+    userControllers.uploadMultipartForm,
     userControllers.resizeProfileCreate,
+    userControllers.createSupervisor,
     userControllers.createUser
   );
 router.route('/login').post(authControllers.login);
@@ -49,7 +51,7 @@ router
   .get(authControllers.interStudentProtection, userControllers.getOneUser)
   .patch(
     authControllers.interStudentProtection,
-    userControllers.uploadAvatar,
+    userControllers.uploadMultipartForm,
     userControllers.resizeProfileUpdate,
     userControllers.updateUser
   )

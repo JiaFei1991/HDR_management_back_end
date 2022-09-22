@@ -43,7 +43,10 @@ exports.sendEmail = async (res, next, options) => {
     }
 
     if (options.appOrMailbox === 'mailbox') {
-      res.status(200).send(templateFilling.fill(options.successMessage));
+      res
+        .status(200)
+        .set('Content-Type', 'text/html')
+        .send(templateFilling.fill(options.successMessage));
     }
 
     return true;
