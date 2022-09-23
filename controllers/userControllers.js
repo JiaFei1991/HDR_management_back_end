@@ -123,13 +123,14 @@ exports.createSupervisor = catchAsync(async (req, res, next) => {
         data: 'Request has been send to an admin!'
       });
     }
+    return;
   }
   // if the role is not supervisor, move on to the next middleware that creates student
   next();
 });
 
 exports.createProtectedUser = catchAsync(async (req, res, next) => {
-  console.log(req.body);
+  // console.log(req.body);
   // if accepted, check the admin email and password to verify identity
   if (req.body.clickedButton === 'Accept') {
     if (!req.body.adminEmail || !req.body.adminPassword) {
@@ -229,7 +230,7 @@ exports.createProtectedUser = catchAsync(async (req, res, next) => {
       appOrMailbox: 'mailbox'
     };
     // the execution will terminate after sending the email
-    if (await emailer.sendEmail(res, next, emailOptions)) return;
+    await emailer.sendEmail(res, next, emailOptions);
   }
 });
 
