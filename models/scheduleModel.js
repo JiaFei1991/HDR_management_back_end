@@ -11,23 +11,39 @@ const scheduleSchema = mongoose.Schema(
       type: String,
       maxlength: [200, 'Description must not exceeds 200 words.']
     },
-    startDate: {
+    startTime: {
       type: Date,
       require: [true, 'A schedule must have a start date.']
     },
-    endDate: {
+    endTime: {
       type: Date,
       require: [true, 'A schedule must have a end date.']
     },
-    projectID: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'Project',
-      require: [true, 'A schedule must blongs to a project.']
+    repeat: {
+      type: String,
+      enum: ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly']
     },
-    studentID: {
+    allday: {
+      type: Boolean,
+      require: [true, 'A schedule is either an all day event or not.']
+    },
+    eventDate: {
+      type: String,
+      require: [true, 'Event is missing its date.']
+    },
+    eventLengthInMin: {
+      type: Number,
+      require: [true, 'Event has to have a duration in mins.']
+    },
+    // projectID: {
+    //   type: mongoose.Schema.ObjectId,
+    //   ref: 'Project',
+    //   require: [true, 'A schedule must blongs to a project.']
+    // },
+    userID: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
-      require: [true, 'A schedule must blongs to a student.']
+      require: [true, 'A schedule must blongs to a user.']
     },
     // a non-required field, when provided, user will receive an email
     // alarting them about the schedule before x mins of its start

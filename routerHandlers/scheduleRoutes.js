@@ -29,7 +29,11 @@ router.use(scheduleControllers.interAccessProtection);
 
 router
   .route('/:id')
-  .get(scheduleControllers.getOneSchedule)
+  .get(
+    authControllers.checkNestedRoute,
+    scheduleControllers.getSchedulesFromOneDay,
+    scheduleControllers.getOneSchedule
+  )
   .patch(scheduleControllers.updateSchedule)
   .delete(scheduleControllers.deleteOneSchedule);
 

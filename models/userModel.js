@@ -138,7 +138,7 @@ userSchema.virtual('projects', {
 // schedules are queried via students
 userSchema.virtual('schedules', {
   ref: 'Schedule',
-  foreignField: 'studentID',
+  foreignField: 'userID',
   localField: '_id'
 });
 
