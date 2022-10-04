@@ -35,6 +35,16 @@ const scheduleSchema = mongoose.Schema(
       type: Number,
       require: [true, 'Event has to have a duration in mins.']
     },
+    location: {
+      type: String
+    },
+    participants: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+        default: undefined
+      }
+    ],
     // projectID: {
     //   type: mongoose.Schema.ObjectId,
     //   ref: 'Project',
