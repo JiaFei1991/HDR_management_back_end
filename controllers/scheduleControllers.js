@@ -5,14 +5,10 @@ const catchAsync = require('../util/catchAsync');
 
 function getFirstAndLastDay(month, year) {
   const date = new Date(Number(year), Number(month) - 1);
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-    .toLocaleString()
-    .split(',')[0]
-    .split('/');
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-    .toLocaleString()
-    .split(',')[0]
-    .split('/');
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  // last day being 12:00 am of the first day in the next month
+  // this way the last day of the month is included in the search range
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1);
   return [firstDay, lastDay];
 }
 
@@ -48,8 +44,6 @@ exports.getSchedulesFromOneDay = catchAsync(async (req, res, next) => {
       ]
     });
 
-    // console.log(req.params.id);
-
     let allday = false;
     doc.forEach((element) => {
       if (element.allday === true) {
@@ -76,34 +70,23 @@ exports.getScheduleNotificationsFromOneMonth = catchAsync(
       const [month, year] = req.params.id.split('-');
       const [first, last] = getFirstAndLastDay(month, year);
 
-      const [firstDay, firstMonth, firstYear] = first;
-      const [lastDay, lastMonth, lastYear] = last;
-
-      //       const doc = await Schedule.find({
-      //         $or: [
-      //           {
-      //             userID: req.params.userId,
-      //             eventDate: {
-      //               $gte: `${firstDay}-${firstMonth}-${firstYear}`,
-      //               $lte: `${lastDay}-${lastMonth}-${lastYear}`
-      //             }
-      //           },
-      //           {
-      //             participants: req.params.userId,
-      //             eventDate: {
-      //               $gte: `${firstDay}-${firstMonth}-${firstYear}`,
-      //               $lte: `${lastDay}-${lastMonth}-${lastYear}`
-      //             }
-      //           }
-      //         ]
-      //       }).select('eventDate -_id');
-
       const doc = await Schedule.find({
-        userID: req.params.userId,
-        eventDate: {
-          $gte: `${firstDay}-${firstMonth}-${firstYear}`,
-          $lte: `${lastDay}-${lastMonth}-${lastYear}`
-        }
+        $or: [
+          {
+            userID: req.params.userId,
+            startTime: {
+              $gte: first,
+              $lte: last
+            }
+          },
+          {
+            participants: req.params.userId,
+            startTime: {
+              $gte: first,
+              $lte: last
+            }
+          }
+        ]
       }).select('eventDate -_id');
 
       let dates = [];
@@ -140,20 +123,19 @@ function getRepeatingDatesInEventObj(start, end, frequency, dataObj) {
         })
         .split('/')
         .join('-'),
-      //TODO: need to set the date of start and end time of a event to the eventDate, then while search for the notifications, compare start and end date with date in startTime.
       startTime: new Date(
         date.getFullYear(),
         date.getMonth(),
         date.getDate(),
-        dataObj.startTime.getHours(),
-        dataObj.startTime.getMinutes()
+        new Date(dataObj.startTime).getHours(),
+        new Date(dataObj.startTime).getMinutes()
       ),
       endTime: new Date(
         date.getFullYear(),
         date.getMonth(),
         date.getDate(),
-        dataObj.endTime.getHours(),
-        dataObj.endTime.getMinutes()
+        new Date(dataObj.endTime).getHours(),
+        new Date(dataObj.endTime).getMinutes()
       )
     });
     date = new Date(date);
