@@ -193,6 +193,8 @@ exports.createOne = (Model) =>
       status: 'success',
       data: dataObj
     });
+
+    next();
   });
 
 exports.getAllNames = (Model, role) =>

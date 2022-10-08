@@ -18,20 +18,24 @@ router
     authControllers.nestedRouteParamFilling,
     scheduleControllers.getAllSchedules
   )
-  .post(scheduleControllers.createSchedule)
+  .post(
+    scheduleControllers.createSchedule,
+    scheduleControllers.createRepeatingEvents
+  )
   .delete(
     authControllers.restrictTo('admin', 'supervisor'),
     scheduleControllers.deleteAllSchedule
   );
 
 // a student cannot access sessions or tickets that is not his/hers
-router.use(scheduleControllers.interAccessProtection);
+// router.use(scheduleControllers.interAccessProtection);
 
 router
   .route('/:id')
   .get(
     authControllers.checkNestedRoute,
     scheduleControllers.getSchedulesFromOneDay,
+    scheduleControllers.getScheduleNotificationsFromOneMonth,
     scheduleControllers.getOneSchedule
   )
   .patch(scheduleControllers.updateSchedule)

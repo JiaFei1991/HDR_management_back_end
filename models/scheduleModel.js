@@ -23,6 +23,12 @@ const scheduleSchema = mongoose.Schema(
       type: String,
       enum: ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly']
     },
+    startDate: {
+      type: Date
+    },
+    endDate: {
+      type: Date
+    },
     allday: {
       type: Boolean,
       require: [true, 'A schedule is either an all day event or not.']
@@ -70,6 +76,23 @@ const scheduleSchema = mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+
+// QUERY MIDDLEWARE
+// scheduleSchema.post(/^find/, async function (doc, next) {
+//   console.log(doc);
+//   let allday = false;
+//   doc.forEach((element) => {
+//     if (element.allday === true) {
+//       allday = true;
+//       return;
+//     }
+//   });
+
+//   doc = { allday, data: doc };
+//   // const result = await doc.find({ allday: { $ne: false } });
+//   // console.log(result);
+//   next();
+// });
 
 const Schedule = mongoose.model('Schedule', scheduleSchema);
 module.exports = Schedule;
