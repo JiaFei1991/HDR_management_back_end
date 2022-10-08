@@ -51,15 +51,13 @@ exports.getSchedulesFromOneDay = catchAsync(async (req, res, next) => {
     // console.log(req.params.id);
 
     let allday = false;
-    let result;
     doc.forEach((element) => {
       if (element.allday === true) {
         allday = true;
-        return;
       }
     });
 
-    result = { allday, data: doc };
+    const result = { allday, data: doc };
 
     res.status(200).json({
       status: 'success',
@@ -141,8 +139,22 @@ function getRepeatingDatesInEventObj(start, end, frequency, dataObj) {
           day: 'numeric'
         })
         .split('/')
-        .join('-')
+        .join('-'),
       //TODO: need to set the date of start and end time of a event to the eventDate, then while search for the notifications, compare start and end date with date in startTime.
+      startTime: new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        dataObj.startTime.getHours(),
+        dataObj.startTime.getMinutes()
+      ),
+      endTime: new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        dataObj.endTime.getHours(),
+        dataObj.endTime.getMinutes()
+      )
     });
     date = new Date(date);
     switch (frequency) {
