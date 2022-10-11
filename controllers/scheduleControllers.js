@@ -51,7 +51,7 @@ exports.getSchedulesFromOneDay = catchAsync(async (req, res, next) => {
       }
     });
 
-    const result = { allday, data: doc };
+    const result = { allday, date: req.params.id, data: doc };
 
     res.status(200).json({
       status: 'success',
