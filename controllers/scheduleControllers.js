@@ -4,11 +4,11 @@ const authControllers = require('./authControllers');
 const catchAsync = require('../util/catchAsync');
 
 function getFirstAndLastDay(month, year) {
-  const date = new Date(Number(year), Number(month) - 1);
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const date = new Date(`${year}-${Number(month) - 1}-1`);
+  const firstDay = new Date(`${date.getFullYear()}-${date.getMonth() + 1}-1`);
   // last day being 12:00 am of the first day in the next month
   // this way the last day of the month is included in the search range
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  const lastDay = new Date(`${date.getFullYear()}-${date.getMonth() + 4}-1`);
   return [firstDay, lastDay];
 }
 
@@ -69,6 +69,8 @@ exports.getScheduleNotificationsFromOneMonth = catchAsync(
     if (req.isNestedRoute && req.params.id.split('-').length === 2) {
       const [month, year] = req.params.id.split('-');
       const [first, last] = getFirstAndLastDay(month, year);
+      console.log(first);
+      console.log(last);
 
       const doc = await Schedule.find({
         $or: [
